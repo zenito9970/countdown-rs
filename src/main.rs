@@ -89,7 +89,7 @@ fn echo(rb: Arc<RustBox>, symbol: &[&str; 6], start_x: usize, start_y: usize) {
     let (mut x, mut y) = (start_x, start_y);
     for line in symbol {
         for c in line.chars() {
-            rb.print_char(x, y, rustbox::RB_NORMAL, Color::White, Color::Default, c);
+            rb.print_char(x, y, rustbox::RB_NORMAL, Color::Default, Color::Default, c);
             x += 1;
         }
         y += 1;
