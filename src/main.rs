@@ -20,26 +20,33 @@ fn main() {
 
     let deadline = parse_duration(&args[0]).unwrap();
     let start = time::Instant::now();
-    let rb = RustBox::init(InitOptions::default()).unwrap();
 
-    let table = fonts::symbol_table();
-    let frame_millis = time::Duration::from_millis(16);
+    let mut exit_code = 0;
 
-    loop {
-        let elapsed = start.elapsed();
-        let remain = deadline - elapsed;
-        if deadline < elapsed {
-            exit(0);
-        }
+    if let Ok(rb) = RustBox::init(InitOptions::default()) {
+        let table = fonts::symbol_table();
+        let frame_millis = time::Duration::from_millis(16);
 
-        draw(&rb, remain.as_secs(), &table);
+        loop {
+            let elapsed = start.elapsed();
+            if deadline < elapsed {
+                exit_code = 0;
+                break;
+            }
+            let remain = deadline - elapsed;
 
-        if let Event::KeyEvent(key) = rb.peek_event(frame_millis, false).unwrap() {
-            if key == Key::Esc || key == Key::Ctrl('c') {
-                exit(1);
+            draw(&rb, remain.as_secs(), &table);
+
+            if let Event::KeyEvent(key) = rb.peek_event(frame_millis, false).unwrap() {
+                if key == Key::Esc || key == Key::Ctrl('c') {
+                    exit_code = 1;
+                    break;
+                }
             }
         }
     }
+
+    exit(exit_code);
 }
 
 fn parse_duration(duration: &str) -> Result<time::Duration, regex::Error> {
