@@ -18,7 +18,7 @@ fn main() {
         exit(2);
     }
 
-    let deadline = parse_duration(&args[0]).unwrap();
+    let deadline = parse_duration(&args[0]);
     let start = time::Instant::now();
 
     let mut exit_code = 0;
@@ -49,13 +49,13 @@ fn main() {
     exit(exit_code);
 }
 
-fn parse_duration(duration: &str) -> Result<time::Duration, regex::Error> {
-    let re = Regex::new(r"((?P<hour>\d+)h)?((?P<minute>\d+)m)?((?P<second>\d+)s)?")?;
+fn parse_duration(duration: &str) -> time::Duration {
+    let re = Regex::new(r"((?P<hour>\d+)h)?((?P<minute>\d+)m)?((?P<second>\d+)s)?").unwrap();
     let caps = re.captures(duration).unwrap();
     let h: u64 = caps.name("hour").map_or(0, |m| m.as_str().parse().unwrap());
     let m: u64 = caps.name("minute").map_or(0, |m| m.as_str().parse().unwrap());
     let s: u64 = caps.name("second").map_or(0, |m| m.as_str().parse().unwrap());
-    Ok(time::Duration::new(3600 * h + 60 * m + s, 0))
+    time::Duration::new(3600 * h + 60 * m + s, 0)
 }
 
 fn draw(rb: &RustBox, remain: u64, table: &HashMap<char, ([&str; 6], usize)>) {
