@@ -1,11 +1,9 @@
+use regex::Regex;
 use rustbox::{self, Color, Event, InitOptions, Key, RustBox};
 use std::collections::HashMap;
 use std::env;
 use std::process::exit;
-use std::sync::{mpsc, Arc};
-use std::thread;
 use std::time;
-use regex::Regex;
 
 mod fonts;
 
@@ -19,38 +17,26 @@ fn main() {
         eprintln!("  {} 2h45m50s", program);
         exit(2);
     }
-    let deadline = parse_duration(&args[0]).unwrap();
 
+    let deadline = parse_duration(&args[0]).unwrap();
     let start = time::Instant::now();
     let rb = RustBox::init(InitOptions::default()).unwrap();
-    let rb = Arc::new(rb);
-
-    let (tx, rx) = mpsc::channel();
-    {
-        let rb = Arc::clone(&rb);
-        thread::spawn(move || loop {
-            tx.send(rb.poll_event(false).unwrap()).unwrap();
-        });
-    }
 
     let table = fonts::symbol_table();
+    let frame_millis = time::Duration::from_millis(16);
 
-    'mainloop: loop {
-        thread::sleep(time::Duration::from_millis(10));
-
-        let rb = Arc::clone(&rb);
-        let remain = deadline - start.elapsed();
-        draw(rb, remain.as_secs(), &table);
-
-        if remain.as_millis() < 21 {
+    loop {
+        let elapsed = start.elapsed();
+        let remain = deadline - elapsed;
+        if deadline < elapsed {
             exit(0);
         }
 
-        if let Ok(event) = rx.try_recv() {
-            if let Event::KeyEvent(key) = event {
-                if key == Key::Esc || key == Key::Ctrl('c') {
-                    exit(1);
-                }
+        draw(&rb, remain.as_secs(), &table);
+
+        if let Event::KeyEvent(key) = rb.peek_event(frame_millis, false).unwrap() {
+            if key == Key::Esc || key == Key::Ctrl('c') {
+                exit(1);
             }
         }
     }
@@ -65,7 +51,7 @@ fn parse_duration(duration: &str) -> Result<time::Duration, regex::Error> {
     Ok(time::Duration::new(3600 * h + 60 * m + s, 0))
 }
 
-fn draw(rb: Arc<RustBox>, remain: u64, table: &HashMap<char, ([&str; 6], usize)>) {
+fn draw(rb: &RustBox, remain: u64, table: &HashMap<char, ([&str; 6], usize)>) {
     let fmt = remain_to_fmt(remain);
     let symbols = fmt_to_symbols(fmt, table);
 
@@ -77,7 +63,6 @@ fn draw(rb: Arc<RustBox>, remain: u64, table: &HashMap<char, ([&str; 6], usize)>
 
     let mut x = start_x;
     for (symbol, w) in &symbols {
-        let rb = Arc::clone(&rb);
         echo(rb, symbol, x, start_y);
         x += w;
     }
@@ -85,7 +70,7 @@ fn draw(rb: Arc<RustBox>, remain: u64, table: &HashMap<char, ([&str; 6], usize)>
     rb.present();
 }
 
-fn echo(rb: Arc<RustBox>, symbol: &[&str; 6], start_x: usize, start_y: usize) {
+fn echo(rb: &RustBox, symbol: &[&str; 6], start_x: usize, start_y: usize) {
     let (mut x, mut y) = (start_x, start_y);
     for line in symbol {
         for c in line.chars() {
