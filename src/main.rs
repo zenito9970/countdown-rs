@@ -77,7 +77,7 @@ fn draw(rb: &RustBox, remain: u64, table: &HashMap<char, ([&str; 6], usize)>) {
     rb.present();
 }
 
-fn echo(rb: &RustBox, symbol: &[&str; 6], start_x: usize, start_y: usize) {
+fn echo(rb: &RustBox, symbol: &[&str], start_x: usize, start_y: usize) {
     let mut y = start_y;
     for line in symbol {
         rb.print(start_x, y, rustbox::RB_NORMAL, Color::Default, Color::Default, line);
