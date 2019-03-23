@@ -60,17 +60,17 @@ fn parse_duration(duration: &str) -> Result<time::Duration, regex::Error> {
 
 fn draw(rb: &RustBox, remain: u64, table: &HashMap<char, ([&str; 6], usize)>) {
     let fmt = remain_to_fmt(remain);
-    let symbols = fmt_to_symbols(fmt, table);
+    let symbols = fmt.chars().map(|c| table[&c]);
 
-    let w_sum = symbols.iter().map(|(_, w)| *w).fold(0, |sum, w| sum + w);
+    let w_sum = symbols.clone().map(|(_, w)| w).fold(0, |sum, w| sum + w);
     let start_x = rb.width() / 2 - w_sum / 2;
     let start_y = rb.height() / 2 - 3;
 
     rb.clear();
 
     let mut x = start_x;
-    for (symbol, w) in &symbols {
-        echo(rb, symbol, x, start_y);
+    for (symbol, w) in symbols {
+        echo(rb, &symbol, x, start_y);
         x += w;
     }
 
@@ -92,15 +92,4 @@ fn remain_to_fmt(remain: u64) -> String {
     } else {
         format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
     }
-}
-
-fn fmt_to_symbols<'a>(
-    fmt: String,
-    table: &HashMap<char, ([&'a str; 6], usize)>,
-) -> Vec<([&'a str; 6], usize)> {
-    let mut ret = vec![];
-    for c in fmt.chars() {
-        ret.push(table[&c]);
-    }
-    ret
 }
